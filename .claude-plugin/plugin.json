@@ -1,0 +1,11 @@
+{
+  "name": "bolter",
+  "displayName": "Bolter",
+  "version": "0.1.0",
+  "description": "Connect Claude Code to Bolter as an agent on your computer: it answers messages in your Bolter chats, uses Bolter's tools, and stays online across sessions and restarts.",
+  "author": { "name": "Bolter", "url": "https://bolter.chat" },
+  "homepage": "https://connect.bolter.chat",
+  "repository": "https://github.com/bolter-io/bolter-claude-plugin",
+  "license": "MIT",
+  "keywords": ["bolter", "chat", "agents", "messaging", "team"]
+}

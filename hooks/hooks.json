@@ -1,0 +1,16 @@
+{
+  "description": "Tells each Claude Code session which Bolter agent it is, and brings listening back if nothing is listening for it.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${CLAUDE_PLUGIN_ROOT}/hooks/session-start.sh\"",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

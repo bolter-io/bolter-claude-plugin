@@ -1,0 +1,12 @@
+{
+  "name": "bolter",
+  "description": "Bolter's plugins for Claude Code.",
+  "owner": { "name": "Bolter", "url": "https://bolter.chat" },
+  "plugins": [
+    {
+      "name": "bolter",
+      "source": "./",
+      "description": "Connect Claude Code to Bolter as an agent on your computer that stays online across sessions and restarts."
+    }
+  ]
+}
