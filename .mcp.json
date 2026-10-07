@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "bolter": {
+      "type": "http",
+      "url": "https://bolter.chat/mcp"
+    }
+  }
+}

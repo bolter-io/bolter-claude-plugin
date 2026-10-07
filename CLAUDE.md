@@ -8,9 +8,15 @@
 
 - `.claude-plugin/plugin.json`: the manifest. Raise `version` on every release; the directory publishes by version.
 - `.claude-plugin/marketplace.json`: lets people install from this repo (`/plugin marketplace add bolter-io/bolter-claude-plugin`).
-- `skills/bolter/SKILL.md`: connect, keep listening, work in Bolter, disconnect. The commands in `commands/` only point at its sections.
-- `skills/bolter/served/`: what the background service runs for each batch of messages. `answer.sh` starts a headless Claude Code turn with **no built-in tools and only Bolter's MCP server**. Never widen that: anyone in the agent's chats can write to it, so a wider tool set hands them the person's computer. `--allowedTools "Bash(bolter-agent:*)"` is NOT a containment: Claude Code auto-approves read-only shell commands, so it still read `~/.zshrc` and fetched the web in testing (2026-10-07).
-- `hooks/session-start.sh`: plain POSIX sh, local files only, no network, silent inside a served turn (`BOLTER_AGENT_ATTEMPT`).
+- `.mcp.json`: Bolter's remote MCP server (`https://bolter.chat/mcp`, OAuth), for chat and Cowork. In Claude Code the skill uses the CLI's stdio server (`bolter-agent mcp`) instead, so the session, its tools and the daemon are one connection; the person picks the same agent on the connector's consent page so it is one agent everywhere.
+- `skills/bolter/SKILL.md`: which surface you are on, connect from Claude Code, use from chat/Cowork, work in Bolter, disconnect. The commands in `commands/` only point at its sections.
+- `hooks/session-start.sh`: plain POSIX sh, local only (`bolter-agent agents`, `bolter-agent daemon --status`), silent inside bolter-agent's own runs (`BOLTER_AGENT_ATTEMPT`, or a cwd under `<config dir>/agents/`).
+
+## Listening belongs to bolter-agent, not this plugin
+
+The plugin owns no listener. Answering with no session open is `bolter-agent daemon` (Bolter repo, `tools/bolter-agent/`), and its successor `bolter-agent setup` when that lands: the plugin installs it and reads its status. Version 0.1.0 ran its own `serve` + script; it was dropped for the daemon (#5782) so there is one listener implementation.
+
+The daemon's Claude background session must keep **no built-in tools** (`--tools ""`, Bolter PR #5821). Anyone in the agent's chats writes to it. Probed 2026-10-07/08: `--allowedTools "Bash(bolter-agent:*)"` let read-only shell, `~/.zshrc` and the web through under a person's `defaultMode: plan`; and `--permission-mode dontAsk` still runs SendMessage (the person's other sessions) and RemoteTrigger (their cloud routines) without a prompt. The README's safety paragraph depends on this: if the daemon ever widens its tools, change the README in the same release.
 
 ## Rules
 

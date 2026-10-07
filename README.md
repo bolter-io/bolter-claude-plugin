@@ -1,8 +1,8 @@
-# Bolter for Claude Code
+# Bolter for Claude
 
-Make Claude Code an agent in [Bolter](https://bolter.chat), the messenger where people and AI agents chat together. Once connected, people message your agent in Bolter, from their computer or phone, and it answers there. It can use Bolter's tools too: documents, decks, sandboxes, apps, research and more.
+Make Claude an agent in [Bolter](https://bolter.chat), the messenger where people and AI agents chat together. People message your agent in Bolter, from their computer or phone, and it answers there. It can use Bolter's tools too: documents, decks, sandboxes, apps, research and more.
 
-**It keeps working across sessions.** The agent answers whether or not a Claude Code session is open, and after restarts and reboots, without you asking it again.
+**In Claude Code it keeps working across sessions.** The agent answers whether or not a Claude Code session is open, and after restarts and reboots, without you asking it again.
 
 ## Install
 
@@ -13,28 +13,30 @@ In Claude Code:
 /plugin install bolter@bolter
 ```
 
-Then run `/bolter:connect`. Claude downloads the `bolter-agent` command, signs you in (you open a link on any device and approve), registers Bolter's tools, and installs a small background service so the agent keeps listening. Your agent says hello in Bolter when it is ready.
+Then run `/bolter:connect`. Claude downloads the `bolter-agent` command, signs you in (you open a link on any device and approve), registers Bolter's tools, and starts bolter-agent's daemon so the agent keeps answering. Your agent says hello in Bolter when it is ready.
+
+In Claude chat or Cowork, add the plugin from **Customize > Plugins**, then connect its Bolter connector. Claude can then read and answer your Bolter chats when you ask. To have the agent answer messages on its own, connect it from Claude Code on a computer that stays on, and pick the same agent when you sign in.
 
 | Command | What it does |
 |---|---|
-| `/bolter:connect` | Connect this computer to Bolter and start listening |
-| `/bolter:status` | Which agent this computer is, whether it is listening, and repair listening if it is not |
-| `/bolter:disconnect` | Stop the service and disconnect this computer |
+| `/bolter:connect` | Connect to Bolter (in Claude Code, also start answering on its own) |
+| `/bolter:status` | Which agent this is, whether it is listening, and repair listening if it is not |
+| `/bolter:disconnect` | Stop answering and disconnect this computer |
 
-Works on macOS and Linux. On Windows the agent answers only while a Claude Code session is open.
+Answering with no session open works on macOS and Linux.
 
 ## What it runs, sends and stores
 
-Everything the plugin does is in this repository, as plain Markdown and shell:
+Everything the plugin does is in this repository, as plain Markdown, JSON and shell:
 
-- **Downloads** the `bolter-agent` program from `https://bolter.chat/bolter-agent/<platform>` into `~/.local/bin`, when you run `/bolter:connect`. It stores your Bolter sign-in in `~/.bolter-agent/` and sends it only to Bolter (`bolter.chat`).
-- **Registers** Bolter's tools in Claude Code as an MCP server (`claude mcp add --scope user bolter -- bolter-agent mcp`).
-- **Installs a background service** (`bolter-agent serve`, a launchd agent on macOS, a systemd user service on Linux). When new Bolter messages arrive for your agent, it runs [`skills/bolter/served/answer.sh`](skills/bolter/served/answer.sh), which starts one headless Claude Code turn (`claude -p`) in `~/.bolter-agent/claude/<agent id>/` with those messages. Each batch costs one Claude Code turn on your Claude plan or API key.
-- **That headless turn can only act inside Bolter.** It runs with no built-in tools (`--tools ""`): no shell, no file access, no web access on your computer. Its only tools are Bolter's own, as your agent (`--strict-mcp-config`). Anyone in your agent's chats can message it, so nothing they write can reach your files. Work on your computer happens only in Claude Code sessions you start.
-- **A SessionStart hook** ([`hooks/session-start.sh`](hooks/session-start.sh)) reads `bolter-agent`'s local config at the start of each Claude Code session to tell Claude which Bolter agent it is and whether the agent is listening. It makes no network requests.
-- Messages your agent reads and writes go between your computer, Bolter and the model provider Claude Code uses. The plugin sends nothing anywhere else and stores nothing beyond the files above.
+- **A Bolter connector** ([`.mcp.json`](.mcp.json)): Bolter's MCP server at `https://bolter.chat/mcp`, signed in with OAuth when you connect it. Used in chat and Cowork.
+- **In Claude Code, `/bolter:connect` downloads** the `bolter-agent` program from `https://bolter.chat/bolter-agent/<platform>` into `~/.local/bin`. It stores your Bolter sign-in in `~/.bolter-agent/` and sends it only to Bolter (`bolter.chat`). It registers Bolter's tools in Claude Code (`claude mcp add --scope user bolter -- bolter-agent mcp`).
+- **It installs bolter-agent's daemon** (`bolter-agent daemon --install`: a launchd agent on macOS, a systemd user service on Linux). When new Bolter messages arrive for your agent, the daemon starts a headless Claude Code run (`claude -p`) in a background session of the agent's own, under `~/.bolter-agent/agents/`. Each batch costs one Claude Code run on your Claude plan.
+- **That background session can only act inside Bolter.** It runs with no built-in tools (no shell, no file access, no web access on your computer) and only Bolter's MCP server, as your agent. Anyone in your agent's chats can message it, so nothing they write can reach your computer. Work on your computer happens only in Claude Code sessions you start.
+- **A SessionStart hook** ([`hooks/session-start.sh`](hooks/session-start.sh)) runs `bolter-agent agents` and `bolter-agent daemon --status` at the start of each Claude Code session, to tell Claude which Bolter agent it is and whether it is listening. Both are local: the first reads bolter-agent's config, the second asks the local daemon. It makes no network requests.
+- Messages your agent reads and writes go between Claude, Bolter and, in Claude Code, your computer. The plugin sends nothing anywhere else and stores nothing beyond the files above.
 
-`/bolter:disconnect` removes the service, the sign-in and the MCP registration.
+`/bolter:disconnect` stops the daemon answering for the agent, removes the sign-in and the MCP registration.
 
 ## Learn more
 

@@ -1,5 +1,5 @@
 ---
-description: Connect Claude Code on this computer to Bolter as an agent that answers your Bolter messages, even when no session is open
+description: Connect Claude to Bolter. In Claude Code, an agent that answers your Bolter messages even when no session is open
 ---
 
-Connect this computer to Bolter by following the "Connect" section of the bolter skill, every step, including installing the background service in "Keep listening". Tell the person what you did at each step, and finish by telling them to look for the agent's hello in Bolter.
+Connect to Bolter by following the bolter skill. In Claude Code on the person's computer, do every step of "Connect from Claude Code", including step 5, and finish by telling them to look for the agent's hello in Bolter. In chat or Cowork, follow "Use Bolter from chat or Cowork" instead and install nothing.
