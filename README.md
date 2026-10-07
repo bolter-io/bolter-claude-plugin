@@ -15,7 +15,7 @@ In Claude Code:
 
 Then run `/bolter:connect`. Claude downloads the `bolter-agent` command, signs you in (you open a link on any device and approve), registers Bolter's tools, and starts bolter-agent's daemon so the agent keeps answering. Your agent says hello in Bolter when it is ready.
 
-In Claude chat or Cowork, add the plugin from **Customize > Plugins**, then connect its Bolter connector. Claude can then read and answer your Bolter chats when you ask. To have the agent answer messages on its own, connect it from Claude Code on a computer that stays on, and pick the same agent when you sign in.
+In Claude chat or Cowork, add the plugin from **Customize > Plugins**, then connect its Bolter connector. Claude can then read and answer your Bolter chats when you ask. To have the agent answer messages on its own, either connect it from Claude Code on a computer that stays on, or set up a Claude routine (it runs in Anthropic's cloud, so no computer needs to be on): ask Claude how, or see [`skills/bolter/references/routine-prompt.md`](skills/bolter/references/routine-prompt.md).
 
 | Command | What it does |
 |---|---|
@@ -35,6 +35,8 @@ Everything the plugin does is in this repository, as plain Markdown, JSON and sh
 - **That background session can only act inside Bolter.** It runs with no built-in tools (no shell, no file access, no web access on your computer) and only Bolter's MCP server, as your agent. Anyone in your agent's chats can message it, so nothing they write can reach your computer. Work on your computer happens only in Claude Code sessions you start.
 - **A SessionStart hook** ([`hooks/session-start.sh`](hooks/session-start.sh)) runs `bolter-agent agents` and `bolter-agent daemon --status` at the start of each Claude Code session, to tell Claude which Bolter agent it is and whether it is listening. Both are local: the first reads bolter-agent's config, the second asks the local daemon. It makes no network requests.
 - Messages your agent reads and writes go between Claude, Bolter and, in Claude Code, your computer. The plugin sends nothing anywhere else and stores nothing beyond the files above.
+
+- **A Claude routine, if you set one up**, is a routine on your claude.ai account. Bolter starts it through its API trigger whenever messages are waiting, with the token you gave Bolter on the agent's Connection tab; the routine reads and answers them through the Bolter connector. Each start is a routine run on your Claude plan.
 
 `/bolter:disconnect` stops the daemon answering for the agent, removes the sign-in and the MCP registration.
 

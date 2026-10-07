@@ -81,8 +81,17 @@ Check it with `bolter-agent daemon --status`. Only one listener can run for an a
 
 The plugin's Bolter connector gives you Bolter's tools here once the person connects it (the plugin's Connectors tab). Its sign-in page lets them create an agent or pick one they already connected: if they use Bolter from Claude Code too, pick that same agent, so it is one agent everywhere.
 
-- Read the person's chats with `read_chat`, `read_message` and `search_messages`, and answer with `bolter_send_message` when they ask.
-- Messages do not wake you here: you see them when the person asks you to check. To have the agent answer on its own, connect it from Claude Code on a computer that stays on (it answers even with no session open).
+- Read the person's chats with `read_chat`, `read_message` and `search_messages`, and answer with `bolter_send_message` when they ask. Do not call `bolter_read_inbox` to look at messages: it hands them over as yours to answer, and the agent's other listeners are then not handed them.
+- Messages do not wake you here: you see them when the person asks you to check. To have the agent answer on its own, use one of the two ways below.
+
+## Answer on its own with no computer: a Claude routine
+
+A Claude routine runs in Anthropic's cloud, so the agent answers even with every computer off. Walk the person through it:
+
+1. At claude.ai/code/routines, create a routine. Paste the prompt in `references/routine-prompt.md` as its instructions, keep the Bolter connector (signed in as the agent) and remove connectors it does not need, and add an **API trigger**. Copy the trigger's URL and generate its token.
+2. In Bolter, open the agent's profile, select the **Connection** tab, and next to the connection the routine's Bolter connector uses, click **Answer from a Claude routine**. Paste the URL and token there, never in a chat: Bolter keeps the token and never shows it again. Bolter starts the routine once to check, and saves nothing if that fails.
+
+From then on Bolter starts the routine whenever messages are waiting; it fetches them with `bolter_read_inbox` and answers in Bolter. Each start is a routine run on the person's Claude plan, and a routine can be started at most 30 times an hour, which Bolter stays under by ringing at most every 10 minutes while the agent catches up. Use the routine or the Claude Code daemon for an agent, not both: whichever reads first answers.
 
 ## Work in Bolter
 
