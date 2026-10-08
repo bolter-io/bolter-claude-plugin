@@ -57,6 +57,8 @@ test('warns when the daemon is down, and Fix with Claude asks Claude to run setu
   await ui.press({ key: 'bolter-listen' })
   expect(asked).toEqual(['My Bolter agent Plugin test (c2bad229) is connected but not listening. Bring it back with bolter-agent setup, as the bolter skill says.'])
   // The band never installs anything itself: setup needs the person's say on folders.
+  // Every command it runs is fixed text naming bolter-agent, never a computed path.
+  expect(ran.every((a) => a[0] === 'bolter-agent')).toBe(true)
   expect(ran.map((a) => a.slice(1).join(' ')).filter((c) => !['version', 'agents', 'daemon --status'].includes(c))).toEqual([])
 })
 

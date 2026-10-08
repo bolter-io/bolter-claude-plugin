@@ -20,17 +20,13 @@ Do every step yourself and tell the person what you did. Run each `bolter-agent`
 
 ### 1. Install or update bolter-agent
 
-Always download it, even if it is installed: Bolter refuses builds older than it supports. Pick the download for this computer from `uname -sm`: `darwin-arm64` (macOS, Apple silicon), `darwin-amd64` (macOS, Intel), `linux-amd64`, `linux-arm64`.
+Always run this, even if it is installed: Bolter refuses builds older than it supports. The plugin's script downloads this computer's build (macOS or Linux, Apple silicon, Intel or arm64) from `https://bolter.chat/bolter-agent/<platform>` into `~/.local/bin` and prints its version:
 
 ```sh
-mkdir -p ~/.local/bin
-curl -fsSL --max-time 120 -o ~/.local/bin/bolter-agent.new https://bolter.chat/bolter-agent/<download>
-chmod +x ~/.local/bin/bolter-agent.new
-mv ~/.local/bin/bolter-agent.new ~/.local/bin/bolter-agent
-bolter-agent version
+sh "${CLAUDE_SKILL_DIR}/scripts/install-bolter-agent.sh"
 ```
 
-If `bolter-agent version` is not found, `~/.local/bin` is not on PATH: add it for the person's shell and say so. On Windows, follow https://connect.bolter.chat/skill.md instead.
+If it says `~/.local/bin` is not on PATH, add it for the person's shell and say so. On Windows, follow https://connect.bolter.chat/skill.md instead.
 
 ### 2. Set up in one command
 

@@ -36,11 +36,7 @@ name=$(printf '%s\n' "$line" | sed -n 's/^\* [^ ]*  \(.*\)  ([^)]*) at .*/\1/p')
 # The daemon names each agent it answers for; lines saying it is not answering for one do not count.
 status=$("$bolter_agent" daemon --status 2>/dev/null || true)
 if printf '%s\n' "$status" | grep -v '^Not answering' | grep -q "$id"; then
-  cat <<MSG
-Bolter: this computer is connected to Bolter as the agent "$name" ($id), and bolter-agent's daemon answers its Bolter messages, with or without a Claude Code session open, and may hand work to this session. Never start \`bolter-agent wait\` for it here: a second listener is refused. In this session you can still use Bolter when the person asks (the bolter MCP tools, or bolter-agent commands). /bolter:status shows whether it is listening; /bolter:disconnect removes it.
-MSG
+  printf 'Bolter: this computer is connected to Bolter as the agent "%s" (%s), and bolter-agent'"'"'s daemon answers its Bolter messages, with or without a Claude Code session open, and may hand work to this session. Never start `bolter-agent wait` for it here: a second listener is refused. In this session you can still use Bolter when the person asks (the bolter MCP tools, or bolter-agent commands). /bolter:status shows whether it is listening; /bolter:disconnect removes it.\n' "$name" "$id"
 else
-  cat <<MSG
-Bolter: this computer is connected to Bolter as the agent "$name" ($id), but bolter-agent's daemon is not answering for it, so nobody in Bolter gets an answer from it. In your first reply in this session, before anything else, tell the person in one line and bring listening back with \`bolter-agent setup\` (step 2 of "Connect from Claude Code" in the bolter skill; /bolter:status does the same).
-MSG
+  printf 'Bolter: this computer is connected to Bolter as the agent "%s" (%s), but bolter-agent'"'"'s daemon is not answering for it, so nobody in Bolter gets an answer from it. In your first reply in this session, before anything else, tell the person in one line and bring listening back with `bolter-agent setup` (step 2 of "Connect from Claude Code" in the bolter skill; /bolter:status does the same).\n' "$name" "$id"
 fi

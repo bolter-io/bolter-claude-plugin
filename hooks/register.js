@@ -29,26 +29,32 @@ function daemonAnswersFor(out, id) {
   return out.split('\n').some((l) => !l.startsWith('Not answering') && l.includes(id))
 }
 
-async function bolterAgent($) {
+// Every command is fixed text. The skill installs bolter-agent in ~/.local/bin, which may not be
+// on PATH, so the runs look there after PATH; PATH and HOME are only used to find the program.
+async function runOptions($) {
+  const path = await $.env.get('PATH')
   const home = await $.env.get('HOME')
-  for (const bin of ['bolter-agent', home + '/.local/bin/bolter-agent']) {
-    try {
-      await $.process.run([bin, 'version'], { timeoutMs: 5000 })
-      return bin
-    } catch {}
+  return { env: { PATH: (path ? path + ':' : '') + home + '/.local/bin' }, timeoutMs: 5000 }
+}
+
+async function installed($, opts) {
+  try {
+    await $.process.run(['bolter-agent', 'version'], opts)
+    return true
+  } catch {
+    return false
   }
-  return null
 }
 
 async function check($) {
-  const bin = await bolterAgent($)
+  const opts = await runOptions($)
   let next = null
-  if (bin) {
+  if (await installed($, opts)) {
     try {
-      const listed = await $.process.run([bin, 'agents'], { timeoutMs: 5000 })
+      const listed = await $.process.run(['bolter-agent', 'agents'], opts)
       const found = currentAgent(listed.stdout)
       if (found) {
-        const status = await $.process.run([bin, 'daemon', '--status'], { timeoutMs: 5000 })
+        const status = await $.process.run(['bolter-agent', 'daemon', '--status'], opts)
         next = { ...found, listening: daemonAnswersFor(status.stdout, found.id) }
       }
     } catch {
