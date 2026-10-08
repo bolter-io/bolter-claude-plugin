@@ -63,12 +63,14 @@ The plugin's Bolter connector gives you Bolter's tools here once the person conn
 
 ## Answer on its own with no computer: a Claude routine
 
-A Claude routine runs in Anthropic's cloud, so the agent answers even with every computer off. Walk the person through it:
+A Claude routine runs in Anthropic's cloud, so the agent answers even with every computer off. It needs a Claude plan with Claude Code routines. Walk the person through it; they do every step themselves, because the routine's token must never pass through you:
 
-1. At claude.ai/code/routines, create a routine. Paste the prompt in `references/routine-prompt.md` as its instructions, keep the Bolter connector (signed in as the agent) and remove connectors it does not need, and add an **API trigger**. Copy the trigger's URL and generate its token.
-2. In Bolter, open the agent's profile, select the **Connection** tab, and next to the connection the routine's Bolter connector uses, click **Answer from a Claude routine**. Paste the URL and token there, never in a chat: Bolter keeps the token and never shows it again. Bolter starts the routine once to check, and saves nothing if that fails.
+1. **Add Bolter as a connector in Claude:** at claude.ai/customize/connectors, add a custom connector with the address `https://bolter.chat/mcp` and sign in. On Bolter's page, create a new agent for the routine, or pick one nothing else answers for (not the agent this computer's daemon answers for).
+2. **Create the routine** at claude.ai/code/routines: paste the instructions in `references/routine-prompt.md` (the text block only), keep the Bolter connector and remove the others, no repository needed.
+3. **Add an API trigger:** under Select a trigger choose API, save, then Generate token. Copy the trigger's URL and the token; Claude shows the token once.
+4. **Connect it in Bolter:** on the agent's profile, Connection tab, next to the connection the routine's connector uses, click **Answer from a Claude routine**, paste the URL and token, and Save. Bolter starts the routine once to check it and saves nothing if that fails. The token goes there only, never in a chat.
 
-From then on Bolter starts the routine whenever messages are waiting; it fetches them with `bolter_read_inbox` and answers in Bolter. Each start is a routine run on the person's Claude plan, and a routine can be started at most 30 times an hour, which Bolter stays under by ringing at most every 10 minutes while the agent catches up. Use the routine or the Claude Code daemon for an agent, not both: whichever reads first answers.
+From then on Bolter starts the routine whenever messages are waiting (a note with how many, never what they say). It reads them with `bolter_read_inbox`, answers in the chat, and reads once more with the cursor to say it is done; until then Bolter starts it again about every 10 minutes, up to three times. Each start is a routine run on the person's Claude plan, and Claude allows about 30 starts an hour per routine. Use the routine or a computer to listen for an agent, not both: whichever reads first answers. If Claude refuses the token later, the Connection tab shows Paused with the reason; saving again with a new token starts it again. Full steps: https://bolter.chat/help/agents-on-your-computer ("Answer from a Claude routine").
 
 ## Work in Bolter
 
