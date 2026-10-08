@@ -10,6 +10,7 @@
 - `.claude-plugin/marketplace.json`: lets people install from this repo (`/plugin marketplace add bolter-io/bolter-claude-plugin`).
 - `.mcp.json`: Bolter's remote MCP server (`https://bolter.chat/mcp`, OAuth), for chat and Cowork. In Claude Code the skill uses the CLI's stdio server (`bolter-agent mcp`) instead, so the session, its tools and the daemon are one connection; the person picks the same agent on the connector's consent page so it is one agent everywhere.
 - `skills/bolter/SKILL.md`: which surface you are on, connect from Claude Code, use from chat/Cowork, work in Bolter, disconnect. The commands in `commands/` only point at its sections.
+- `hooks/register.js` (named by `modules` in `hooks/hooks.json`): the mod. Draws a band above the prompt only when the agent is connected but not listening, with a Start listening button. Local commands only, through `$.process.run`; silent in the daemon's own runs. Tests: `claude plugin test` (`tests/`). Keep its `claude plugin validate` `calls:` list short: reviewers read it.
 - `hooks/session-start.sh`: plain POSIX sh, local only (`bolter-agent agents`, `bolter-agent daemon --status`), silent inside bolter-agent's own runs (`BOLTER_AGENT_ATTEMPT`, or a cwd under `<config dir>/agents/`).
 
 ## Listening belongs to bolter-agent, not this plugin

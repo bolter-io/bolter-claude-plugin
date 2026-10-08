@@ -1,5 +1,5 @@
 {
-  "description": "Tells each Claude Code session which Bolter agent it is, and brings listening back if nothing is listening for it.",
+  "description": "Tells each Claude Code session which Bolter agent it is (SessionStart), and shows a band above the prompt with a button to start listening again when the agent stops listening (the mod in register.js).",
   "hooks": {
     "SessionStart": [
       {
@@ -12,5 +12,8 @@
         ]
       }
     ]
-  }
+  },
+  "modules": [
+    "./register.js"
+  ]
 }
