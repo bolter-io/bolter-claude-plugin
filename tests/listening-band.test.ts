@@ -17,8 +17,6 @@ const DOWN = 'The daemon is not running for /x/config.json.\n'
 /** A computer with bolter-agent on PATH, the agent above connected, and the daemon in the state `daemon` holds. */
 function computer(on: any, daemon: { status: string }, cwd = '/Users/p/code') {
   const ran: string[][] = []
-  mock.env(on, { HOME: '/Users/p' })
-  on('session.cwd', () => ({ value: cwd }))
   on('session.start', () => ({ cwd }))
   on('ui.render', () => ({ type: 'Text', props: {}, children: ['drawn by Claude Code'] }))
   on('ui.toast', () => ({ value: undefined }))
@@ -83,22 +81,10 @@ test('notices within a minute when listening stops', async ($, on) => {
   expect(await ui.find({ type: 'Text', text: warning })).toBeDefined()
 })
 
-test("runs nothing inside the daemon's own background session", async ($, on) => {
+test('runs nothing in a claude -p run, such as one of bolter-agent\'s routers', async ($, on) => {
   const clock = mock.clock(on)
-  const { ran } = computer(on, { status: DOWN }, '/Users/p/.bolter-agent/agents/c2bad229-aaaa')
-  await $.session.start({ surface: 'terminal', isInteractive: false, cwd: '/Users/p/.bolter-agent/agents/c2bad229-aaaa' })
-  await clock.advance(120_000)
-  expect(ran).toEqual([])
-})
-
-test("runs nothing in the agent's own sessions and routers, which carry BOLTER_AGENT", async ($, on) => {
-  const clock = mock.clock(on)
-  const ran: string[][] = []
-  mock.env(on, { HOME: '/Users/p', BOLTER_AGENT: 'c2bad229-aaaa' })
-  on('session.cwd', () => ({ value: '/Users/p/code' }))
-  on('session.start', () => ({ cwd: '/Users/p/code' }))
-  on('process.run', ($: unknown, e: { argv: string[] }) => { ran.push(e.argv); return { value: { exitCode: 0, stdout: '', stderr: '' } } })
-  await $.session.start({ surface: 'terminal', isInteractive: false, cwd: '/Users/p/code' })
+  const { ran } = computer(on, { status: DOWN })
+  await $.session.start({ surface: null, isInteractive: false, cwd: '/Users/p/code' })
   await clock.advance(120_000)
   expect(ran).toEqual([])
 })

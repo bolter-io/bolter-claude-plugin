@@ -29,17 +29,11 @@ function daemonAnswersFor(out, id) {
   return out.split('\n').some((l) => !l.startsWith('Not answering') && l.includes(id))
 }
 
-// Every command is fixed text. The skill installs bolter-agent in ~/.local/bin, which may not be
-// on PATH, so the runs look there after PATH; PATH and HOME are only used to find the program.
-async function runOptions($) {
-  const path = await $.env.get('PATH')
-  const home = await $.env.get('HOME')
-  return { env: { PATH: (path ? path + ':' : '') + home + '/.local/bin' }, timeoutMs: 5000 }
-}
-
-async function installed($, opts) {
+// Every command is written out whole, so a reader (and the plugin directory) sees exactly what runs. The
+// mod reads no environment variables; bolter-agent is found on PATH (the skill puts ~/.local/bin there).
+async function installed($) {
   try {
-    await $.process.run(['bolter-agent', 'version'], opts)
+    await $.process.run(['bolter-agent', 'version'], { timeoutMs: 5000 })
     return true
   } catch {
     return false
@@ -47,14 +41,13 @@ async function installed($, opts) {
 }
 
 async function check($) {
-  const opts = await runOptions($)
   let next = null
-  if (await installed($, opts)) {
+  if (await installed($)) {
     try {
-      const listed = await $.process.run(['bolter-agent', 'agents'], opts)
+      const listed = await $.process.run(['bolter-agent', 'agents'], { timeoutMs: 5000 })
       const found = currentAgent(listed.stdout)
       if (found) {
-        const status = await $.process.run(['bolter-agent', 'daemon', '--status'], opts)
+        const status = await $.process.run(['bolter-agent', 'daemon', '--status'], { timeoutMs: 5000 })
         next = { ...found, listening: daemonAnswersFor(status.stdout, found.id) }
       }
     } catch {
@@ -67,19 +60,11 @@ async function check($) {
   if (changed) $.ui.invalidate('ui.render')
 }
 
-// The daemon's routers and the agent's own sessions (BOLTER_AGENT set), and serve's runs, have their own
-// instructions and no one to show a band to.
-async function insideABolterRun($) {
-  if (await $.env.get('BOLTER_AGENT_ATTEMPT')) return true
-  if (await $.env.get('BOLTER_AGENT')) return true
-  const home = await $.env.get('HOME')
-  const cwd = await $.session.cwd()
-  return typeof cwd === 'string' && cwd.startsWith(home + '/.bolter-agent/agents/')
-}
-
 export function register(on) {
   on('session.start', async ($, e, next) => {
-    if (!(await insideABolterRun($))) {
+    // Only where a person is at the prompt: not in `claude -p` runs, such as bolter-agent's routers.
+    // The agent's own sessions are interactive; they exist only while the daemon answers, so the band stays empty.
+    if (e.isInteractive) {
       // Check once now, without holding up the session, then once a minute.
       $.clock.after(0, () => check($))
       $.clock.every(CHECK_EVERY_MS, () => check($))
