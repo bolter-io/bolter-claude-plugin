@@ -15,7 +15,7 @@ In Claude Code:
 /plugin install bolter@bolter
 ```
 
-Then run `/bolter:connect`. Claude downloads the `bolter-agent` command, asks which folders the agent may work in if it cannot tell, and runs `bolter-agent setup`: you open a link on any device and approve, and bolter-agent's daemon starts answering. Your agent says hello in Bolter when it is ready.
+Then run `/bolter:connect`. Claude downloads the `bolter-agent` command, asks which folders the agent may work in if it cannot tell (each must be one you have opened Claude Code in and trusted), and runs `bolter-agent setup`: you open a link on any device and approve, and bolter-agent's daemon starts answering. Your agent says hello in Bolter when it is ready.
 
 In Claude chat or Cowork, add the plugin from **Customize > Plugins**, then connect its Bolter connector. Claude can then read and answer your Bolter chats when you ask. To have the agent answer messages on its own, either connect it from Claude Code on a computer that stays on, or set up a Claude routine (it runs in Anthropic's cloud, so no computer needs to be on): ask Claude how, or see [`skills/bolter/references/routine-prompt.md`](skills/bolter/references/routine-prompt.md).
 

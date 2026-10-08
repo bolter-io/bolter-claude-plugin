@@ -34,7 +34,7 @@ If `bolter-agent version` is not found, `~/.local/bin` is not on PATH: add it fo
 
 ### 2. Set up in one command
 
-First choose the folders the agent's own sessions may work in: usually the project this session is in. If you cannot tell (this session is in the home folder, a temporary folder, or several projects could be meant), ask the person. Then run this in the background, because it waits up to 30 minutes for the person, with one `--folder` for each folder:
+First choose the folders the agent's own sessions may work in: usually the project this session is in. If you cannot tell (this session is in the home folder, a temporary folder, or several projects could be meant), ask the person. Each folder must be one Claude Code already trusts (the person has opened Claude Code there and accepted the trust prompt): the agent's sessions cannot start anywhere else, and setup does not check. The folder this session is in is trusted. For any other folder, ask the person to run `claude` in it once and accept the prompt; never mark a folder trusted yourself. Then run this in the background, because it waits up to 30 minutes for the person, with one `--folder` for each folder:
 
 ```sh
 bolter-agent setup --url https://bolter.chat --folder <folder>
