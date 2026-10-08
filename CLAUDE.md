@@ -11,13 +11,13 @@
 - `.mcp.json`: Bolter's remote MCP server (`https://bolter.chat/mcp`, OAuth), for chat and Cowork. In Claude Code the skill uses the CLI's stdio server (`bolter-agent mcp`) instead, so the session, its tools and the daemon are one connection; the person picks the same agent on the connector's consent page so it is one agent everywhere.
 - `skills/bolter/SKILL.md`: which surface you are on, connect from Claude Code, use from chat/Cowork, work in Bolter, disconnect. The commands in `commands/` only point at its sections.
 - `hooks/register.js` (named by `modules` in `hooks/hooks.json`): the mod. Draws a band above the prompt only when the agent is connected but not listening, with a Start listening button. Local commands only, through `$.process.run`; silent in the daemon's own runs. Tests: `claude plugin test` (`tests/`). Keep its `claude plugin validate` `calls:` list short: reviewers read it.
-- `hooks/session-start.sh`: plain POSIX sh, local only (`bolter-agent agents`, `bolter-agent daemon --status`), silent inside bolter-agent's own runs (`BOLTER_AGENT_ATTEMPT`, or a cwd under `<config dir>/agents/`).
+- `hooks/session-start.sh`: plain POSIX sh, local only (`bolter-agent agents`, `bolter-agent daemon --status`), silent inside bolter-agent's own runs (`BOLTER_AGENT` or `BOLTER_AGENT_ATTEMPT` set, or a cwd under `<config dir>/agents/`).
 
 ## Listening belongs to bolter-agent, not this plugin
 
-The plugin owns no listener. Answering with no session open is `bolter-agent daemon` (Bolter repo, `tools/bolter-agent/`), and its successor `bolter-agent setup` when that lands: the plugin installs it and reads its status. Version 0.1.0 ran its own `serve` + script; it was dropped for the daemon (#5782) so there is one listener implementation.
+The plugin owns no listener. Answering with no session open is `bolter-agent setup` (Bolter repo, `tools/bolter-agent/`, #5851): the daemon starts a router run per batch, which hands work to the person's own sessions or to sessions of the agent's own in the folders setup was given. The plugin runs setup and reads `daemon --status`. 0.1.0 ran its own `serve` + script; 0.2.0 to 0.4.0 wrapped `daemon --install`, which #5851 removed.
 
-The daemon's Claude background session must keep **no built-in tools** (`--tools ""`, Bolter PR #5821). Anyone in the agent's chats writes to it. Probed 2026-10-07/08: `--allowedTools "Bash(bolter-agent:*)"` let read-only shell, `~/.zshrc` and the web through under a person's `defaultMode: plan`; and `--permission-mode dontAsk` still runs SendMessage (the person's other sessions) and RemoteTrigger (their cloud routines) without a prompt. The README's safety paragraph depends on this: if the daemon ever widens its tools, change the README in the same release.
+What the agent can do on the person's computer is bolter-agent's design (routers: `ListAgents,SendMessage` + Bolter's tools; workers: edit and run in their folder, read anywhere, network on). The README's "What it runs" section must describe it exactly: re-read `router.go` and `workers.go` (`routerTools`, `claudeWorkerTools`) on every release and change the README in the same release if they changed. Probed 2026-10-07/08: a `Bash(bolter-agent:*)` allowlist is not a containment, and `dontAsk` alone still runs SendMessage and RemoteTrigger.
 
 ## Rules
 

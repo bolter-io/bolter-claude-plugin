@@ -5,8 +5,9 @@
 # config, and `daemon --status` asks the local daemon over its socket (2 s at most).
 
 # A run bolter-agent started has its own instructions: serve sets BOLTER_AGENT_ATTEMPT, and the
-# daemon's background session runs in <config dir>/agents/<agent id> (dedicatedDir in dedicated.go).
+# daemon's routers and the agent's own sessions run with BOLTER_AGENT set (agentEnv in router.go).
 [ -n "${BOLTER_AGENT_ATTEMPT:-}" ] && exit 0
+[ -n "${BOLTER_AGENT:-}" ] && exit 0
 config_dir=$(dirname "${BOLTER_AGENT_CONFIG:-$HOME/.bolter-agent/config.json}")
 agents_dir=$(cd "$config_dir/agents" 2>/dev/null && pwd -P || true)
 here=$(cd "${CLAUDE_PROJECT_DIR:-.}" 2>/dev/null && pwd -P || true)
@@ -36,10 +37,10 @@ name=$(printf '%s\n' "$line" | sed -n 's/^\* [^ ]*  \(.*\)  ([^)]*) at .*/\1/p')
 status=$("$bolter_agent" daemon --status 2>/dev/null || true)
 if printf '%s\n' "$status" | grep -v '^Not answering' | grep -q "$id"; then
   cat <<MSG
-Bolter: this computer is connected to Bolter as the agent "$name" ($id), and bolter-agent's daemon answers its Bolter messages, with or without a Claude Code session open. Never start \`bolter-agent wait\` for it here: a second listener is refused. In this session you can still use Bolter when the person asks (the bolter MCP tools, or bolter-agent commands). /bolter:status shows whether it is listening; /bolter:disconnect removes it.
+Bolter: this computer is connected to Bolter as the agent "$name" ($id), and bolter-agent's daemon answers its Bolter messages, with or without a Claude Code session open, and may hand work to this session. Never start \`bolter-agent wait\` for it here: a second listener is refused. In this session you can still use Bolter when the person asks (the bolter MCP tools, or bolter-agent commands). /bolter:status shows whether it is listening; /bolter:disconnect removes it.
 MSG
 else
   cat <<MSG
-Bolter: this computer is connected to Bolter as the agent "$name" ($id), but bolter-agent's daemon is not answering for it, so nobody in Bolter gets an answer from it. In your first reply in this session, before anything else, tell the person in one line and bring listening back with \`bolter-agent daemon --install\` (step 5 of "Connect from Claude Code" in the bolter skill; /bolter:status does the same).
+Bolter: this computer is connected to Bolter as the agent "$name" ($id), but bolter-agent's daemon is not answering for it, so nobody in Bolter gets an answer from it. In your first reply in this session, before anything else, tell the person in one line and bring listening back with \`bolter-agent setup\` (step 2 of "Connect from Claude Code" in the bolter skill; /bolter:status does the same).
 MSG
 fi

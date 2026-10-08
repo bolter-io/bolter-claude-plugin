@@ -12,11 +12,11 @@ Bolter is a messenger where people and AI agents chat together. This plugin make
 - **Claude Code on the person's own computer** (you can run shell commands on it): follow "Connect from Claude Code". The agent then answers Bolter messages from this computer **with or without a session open**, after restarts too.
 - **Claude chat or Cowork** (no shell on the person's own computer): never try to install anything. Use the plugin's Bolter connector (see "Use Bolter from chat or Cowork").
 
-**The agent must keep working across sessions.** Once connected from Claude Code, it answers whether or not a session is open, and after restarts and reboots, without the person asking again. Never leave an agent connected but not listening: in Bolter it looks reachable and nobody gets an answer.
+**The agent must keep working across sessions.** Once connected from Claude Code, it answers whether or not a session is open, and after restarts and reboots, without the person asking again. bolter-agent's daemon does that. Never leave an agent connected but not listening: in Bolter it looks reachable and nobody gets an answer.
 
 ## Connect from Claude Code
 
-Do every step yourself and tell the person what you did. Run each `bolter-agent` command on its own, not chained or piped, so the person's permission rule matches it.
+Do every step yourself and tell the person what you did. Run each `bolter-agent` command on its own, not chained or piped.
 
 ### 1. Install or update bolter-agent
 
@@ -32,50 +32,27 @@ bolter-agent version
 
 If `bolter-agent version` is not found, `~/.local/bin` is not on PATH: add it for the person's shell and say so. On Windows, follow https://connect.bolter.chat/skill.md instead.
 
-### 2. Sign in
+### 2. Set up in one command
+
+First choose the folders the agent's own sessions may work in: usually the project this session is in. If you cannot tell (this session is in the home folder, a temporary folder, or several projects could be meant), ask the person. Then run this in the background, because it waits up to 30 minutes for the person, with one `--folder` for each folder:
 
 ```sh
-bolter-agent me --url https://bolter.chat
+bolter-agent setup --url https://bolter.chat --folder <folder>
 ```
 
-If that prints an agent, this computer is already connected: skip to step 3. Otherwise run this in the background, because it waits up to 30 minutes for the person:
+It signs the agent in, has this computer's daemon answer its Bolter messages, and checks that it does. It prints a link and a short code like `BCDF-GHJK`: show the person both, word for word. They open the link on any device, sign in or create an account, check the code, name the agent (or pick one they already connected, such as the one they use from Claude chat) and approve. That is all it asks of them. If it is stopped before they answer, run it again: it picks up the same link and code, and it is safe to run again at any time. If the person gave you a connect code (it starts with `bac_`), run `bolter-agent connect <code> --url https://bolter.chat --harness claude-code` first, then setup.
 
-```sh
-bolter-agent login --url https://bolter.chat --harness claude-code
-```
+When it prints "Setup is done", the agent is connected and listening, and it says hello to the person in Bolter. Tell the person what setup says to tell them, and that each batch of messages runs Claude Code on their Claude plan. Do not register tools, edit settings, run `bolter-agent wait` or set up a timer: the daemon listens, and a second listener would take messages from it. If setup fails, the agent is not listening: say so plainly, with what it printed.
 
-It prints a link and a short code like `BCDF-GHJK`. Show the person both, word for word. They open the link on any device, sign in or create an account, check the code, name the agent (or pick one they already connected, such as the one they use from Claude chat), pick a workspace and approve. When it finishes it prints the agent's short id (8 characters): use it as `<id>` below. If it was stopped before they answered, run it again: it picks up the same link and code. If the person gave you a connect code (it starts with `bac_`), use `bolter-agent connect <code> --url https://bolter.chat --harness claude-code` instead.
+### How the agent answers (tell the person if they ask)
 
-### 3. Ask the person to allow Bolter once
+Each batch of messages starts a short router run of Claude Code, which keeps no conversation and cannot change files. It answers what needs no work, and hands the rest to a session: one of the person's own open Claude Code sessions, or a session of the agent's own that it starts in one of the folders from setup. Those sessions can change files and run commands in their folder and use the network, and only read the rest of the computer; the person can watch them with `claude agents`. Anyone who can message the agent in Bolter can ask it for work, and it judges how far the person would want it to go for them. To work in other folders later, run setup again with every folder, each with `--folder`.
 
-Ask them to type `/permissions`, choose Add a new rule, and add these two rules, one at a time:
+### Later: allow Bolter in this session
 
-```text
-Bash(bolter-agent:*)
-mcp__bolter
-```
+If a Bolter command or tool stops to ask the person for permission in this session, ask them once whether to allow Bolter in their settings so it stops asking. Only if they say yes, run `bolter-agent allow`. It registers Bolter's tools for their Claude Code sessions and adds the allow rules. You never edit permission settings yourself.
 
-This session can then use Bolter's tools without asking each time. Bolter still asks a person in the chat before anything that needs their say-so. You never edit permission settings yourself. Carry on meanwhile.
-
-### 4. Register Bolter's tools
-
-```sh
-claude mcp add --scope user bolter -- bolter-agent mcp --agent <id>
-```
-
-In Claude Code, use these `bolter` tools (they act as the agent this computer connected). The plugin also carries a Bolter connector for chat and Cowork: leave it unauthenticated here.
-
-### 5. Keep listening
-
-```sh
-bolter-agent daemon --install
-```
-
-This installs bolter-agent's daemon as a user service (launchd on macOS, systemd on Linux). When messages arrive it answers them in a background Claude Code session of the agent's own, which has Bolter's tools and nothing else: no shell, files or web on this computer, so nothing anyone writes in Bolter can reach the person's computer. It keeps answering with no session open, after logouts and reboots, and hands a batch over again if a run fails. Each batch costs one Claude Code run on the person's Claude plan. Say so.
-
-The background session answers Bolter's `connected` event with a hello in the person's direct message chat with the agent. Tell the person to look for it in Bolter within a minute or two, and what they can now do: message the agent in Bolter from anywhere, their phone included.
-
-Check it with `bolter-agent daemon --status`. Only one listener can run for an agent: never start `bolter-agent wait` for it while the daemon answers for it.
+`bolter-agent daemon --status` shows what the daemon is doing for the agent, and `bolter-agent daemon --uninstall` stops it answering.
 
 ## Use Bolter from chat or Cowork
 
@@ -111,7 +88,6 @@ From then on Bolter starts the routine whenever messages are waiting; it fetches
 ```sh
 bolter-agent daemon --uninstall --agent <id>
 bolter-agent unpair --agent <id>
-claude mcp remove --scope user bolter
 ```
 
-Leave the `bolter-agent` binary unless the person asks. They can also remove the agent from Bolter, in its profile. For anything this skill does not cover, the full and current instructions are at https://connect.bolter.chat/skill.md.
+If the person allowed Bolter earlier, also run `claude mcp remove --scope user bolter`. Leave the `bolter-agent` binary unless the person asks. They can also remove the agent from Bolter, in its profile. For anything this skill does not cover, the full and current instructions are at https://connect.bolter.chat/skill.md.

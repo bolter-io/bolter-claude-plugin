@@ -6,7 +6,8 @@
 // checks once a minute with two local commands, `bolter-agent agents` (reads its
 // config) and `bolter-agent daemon --status` (asks the local daemon over its socket),
 // and only when the agent is connected but not listening draws a band above the
-// prompt with a button that starts listening again (`bolter-agent daemon --install`).
+// prompt with a button that asks Claude, in this session, to bring listening back with
+// `bolter-agent setup` (which asks the person which folders to use when it cannot tell).
 // It makes no network requests of its own and draws nothing while all is well.
 
 const CHECK_EVERY_MS = 60_000
@@ -14,7 +15,6 @@ const CHECK_EVERY_MS = 60_000
 // What the last check found: null until it runs, or when this computer has no agent.
 let agent = null // { id, name, listening }
 let busy = false
-let lastError = null
 
 // The starred line of `bolter-agent agents` is the agent it acts as from Claude Code:
 // "* 2daad581  Name  (claude-code) at https://bolter.chat"
@@ -57,12 +57,15 @@ async function check($) {
   }
   const changed = JSON.stringify(next) !== JSON.stringify(agent)
   agent = next
+  if (agent && agent.listening) busy = false
   if (changed) $.ui.invalidate('ui.render')
 }
 
-// The daemon's own background runs, and serve's, have their own instructions and no one to show a band to.
+// The daemon's routers and the agent's own sessions (BOLTER_AGENT set), and serve's runs, have their own
+// instructions and no one to show a band to.
 async function insideABolterRun($) {
   if (await $.env.get('BOLTER_AGENT_ATTEMPT')) return true
+  if (await $.env.get('BOLTER_AGENT')) return true
   const home = await $.env.get('HOME')
   const cwd = await $.session.cwd()
   return typeof cwd === 'string' && cwd.startsWith(home + '/.bolter-agent/agents/')
@@ -81,21 +84,14 @@ export function register(on) {
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     if (!agent || agent.listening) return next(e)
     const { Box, Text, Button } = $.ui.resolve(e)
-    const start = async () => {
+    // Setup needs the person's say on folders, so Claude does it in this session rather than the band running it.
+    const fix = async () => {
       busy = true
-      lastError = null
       $.ui.invalidate('ui.render')
-      try {
-        const bin = await bolterAgent($)
-        const out = bin ? await $.process.run([bin, 'daemon', '--install'], { timeoutMs: 60_000 }) : null
-        if (!out || out.exitCode !== 0) lastError = out ? (out.stderr || out.stdout).trim().split('\n')[0] : 'bolter-agent is not installed: run /bolter:connect'
-      } catch (err) {
-        lastError = String(err && err.message ? err.message : err)
-      }
-      busy = false
-      await check($)
-      $.ui.invalidate('ui.render')
-      if (!lastError) $.ui.toast('Bolter: ' + agent.name + ' is listening again')
+      await $.prompt.submit({
+        text: 'My Bolter agent ' + agent.name + ' (' + agent.id + ') is connected but not listening. Bring it back with bolter-agent setup, as the bolter skill says.',
+        asUser: true,
+      })
     }
     const theirs = await next(e)
     return Box({
@@ -106,10 +102,9 @@ export function register(on) {
           columnGap: 2,
           children: [
             Text({ color: 'warning', children: ['Bolter: ' + agent.name + ' is not listening, so nobody in Bolter gets an answer from it.'] }),
-            Button({ key: 'bolter-listen', label: busy ? 'Starting...' : 'Start listening', onPress: busy ? () => {} : start }),
+            Button({ key: 'bolter-listen', label: busy ? 'Asked Claude' : 'Fix with Claude', onPress: busy ? () => {} : fix }),
           ],
         }),
-        ...(lastError ? [Text({ dimColor: true, children: [lastError] })] : []),
         theirs,
       ],
     })

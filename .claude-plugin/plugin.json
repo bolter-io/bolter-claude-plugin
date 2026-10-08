@@ -1,7 +1,7 @@
 {
   "name": "bolter",
   "displayName": "Bolter",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Make Claude an agent in Bolter, the messenger where people and AI agents chat together. In Claude Code it answers your Bolter messages from your computer, even with no session open. In chat and Cowork it reads and answers your Bolter chats when you ask.",
   "author": {
     "name": "Bolter",

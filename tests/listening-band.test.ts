@@ -22,16 +22,17 @@ function computer(on: any, daemon: { status: string }, cwd = '/Users/p/code') {
   on('session.start', () => ({ cwd }))
   on('ui.render', () => ({ type: 'Text', props: {}, children: ['drawn by Claude Code'] }))
   on('ui.toast', () => ({ value: undefined }))
+  const asked: string[] = []
+  on('prompt.submit', ($: unknown, e: { text: string; asUser?: boolean }) => { asked.push(e.text); return { text: e.text } })
   on('process.run', ($: unknown, e: { argv: string[] }) => {
     ran.push(e.argv)
     const args = e.argv.slice(1).join(' ')
     if (args === 'version') return { value: { exitCode: 0, stdout: 'abc\n', stderr: '' } }
     if (args === 'agents') return { value: { exitCode: 0, stdout: AGENTS, stderr: '' } }
     if (args === 'daemon --status') return { value: { exitCode: 0, stdout: daemon.status, stderr: '' } }
-    if (args === 'daemon --install') { daemon.status = LISTENING; return { value: { exitCode: 0, stdout: 'Installed', stderr: '' } } }
     return { deny: 'unexpected command ' + args }
   })
-  return ran
+  return { ran, asked }
 }
 
 const warning = /is not listening, so nobody in Bolter gets an answer/
@@ -46,16 +47,17 @@ test('draws nothing of its own while the agent is listening', async ($, on) => {
   expect(await ui.find({ key: 'bolter-listen' })).toBeUndefined()
 })
 
-test('warns when the daemon is down, and Start listening installs it and clears the warning', async ($, on) => {
+test('warns when the daemon is down, and Fix with Claude asks Claude to run setup', async ($, on) => {
   const clock = mock.clock(on)
-  const ran = computer(on, { status: DOWN })
+  const { ran, asked } = computer(on, { status: DOWN })
   await $.session.start({ surface: 'terminal', isInteractive: true, cwd: '/Users/p/code' })
   await clock.settle()
   const ui = await $.ui.mount(BAND)
   expect(await ui.find({ type: 'Text', text: /Bolter: Plugin test is not listening/ })).toBeDefined()
   await ui.press({ key: 'bolter-listen' })
-  expect(ran.map((a) => a.slice(1).join(' '))).toContain('daemon --install')
-  expect(await ui.find({ type: 'Text', text: warning })).toBeUndefined()
+  expect(asked).toEqual(['My Bolter agent Plugin test (c2bad229) is connected but not listening. Bring it back with bolter-agent setup, as the bolter skill says.'])
+  // The band never installs anything itself: setup needs the person's say on folders.
+  expect(ran.map((a) => a.slice(1).join(' ')).filter((c) => !['version', 'agents', 'daemon --status'].includes(c))).toEqual([])
 })
 
 test('a daemon that refuses the agent counts as not listening', async ($, on) => {
@@ -81,8 +83,20 @@ test('notices within a minute when listening stops', async ($, on) => {
 
 test("runs nothing inside the daemon's own background session", async ($, on) => {
   const clock = mock.clock(on)
-  const ran = computer(on, { status: DOWN }, '/Users/p/.bolter-agent/agents/c2bad229-aaaa')
+  const { ran } = computer(on, { status: DOWN }, '/Users/p/.bolter-agent/agents/c2bad229-aaaa')
   await $.session.start({ surface: 'terminal', isInteractive: false, cwd: '/Users/p/.bolter-agent/agents/c2bad229-aaaa' })
+  await clock.advance(120_000)
+  expect(ran).toEqual([])
+})
+
+test("runs nothing in the agent's own sessions and routers, which carry BOLTER_AGENT", async ($, on) => {
+  const clock = mock.clock(on)
+  const ran: string[][] = []
+  mock.env(on, { HOME: '/Users/p', BOLTER_AGENT: 'c2bad229-aaaa' })
+  on('session.cwd', () => ({ value: '/Users/p/code' }))
+  on('session.start', () => ({ cwd: '/Users/p/code' }))
+  on('process.run', ($: unknown, e: { argv: string[] }) => { ran.push(e.argv); return { value: { exitCode: 0, stdout: '', stderr: '' } } })
+  await $.session.start({ surface: 'terminal', isInteractive: false, cwd: '/Users/p/code' })
   await clock.advance(120_000)
   expect(ran).toEqual([])
 })
