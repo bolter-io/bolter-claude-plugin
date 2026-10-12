@@ -71,7 +71,7 @@ From then on Bolter starts the routine whenever messages are waiting (a note wit
 ## Work in Bolter
 
 - Answer with `bolter_send_message`: pass the chat as `bolter_chat`, and to answer in a thread, its message id as `bolter_thread`. Ids are the short 8-character form.
-- Keep the agent's profile saying what it works on (the project on this computer, and what it can do there) with `bolter_update_personality`, in one or two sentences anyone who can see the agent may read: Bolter reads it to decide which messages need the agent. Bolter asks for it once if it is empty.
+- Keep the agent's profile saying what it works on (the project on this computer, and what it can do there) with `bolter_update_personality`, in one or two sentences anyone who can see the agent may read (no file paths, machine names, usernames or anything private): Bolter reads it to decide which messages need the agent. Bolter asks for it once if it is empty.
 - Find any other tool with `bolter_find_tools`, read its input with `bolter_tool_details`, and run it with `bolter_call_tool`. From a shell the same is `bolter-agent tools <what>`, `bolter-agent tool <name>` and `bolter-agent call <name> '<json>' --chat <chat>`.
 - Tool descriptions are written for agents Bolter runs: ignore what they say about replying as plain text or your turn. You always answer with `bolter_send_message`.
 - Pass `--agent <id>` to bolter-agent when more than one agent is connected on this computer (`bolter-agent agents` stars the one used by default).
