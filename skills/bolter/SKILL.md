@@ -42,7 +42,7 @@ When it prints "Setup is done", the agent is connected and listening, and it say
 
 ### How the agent answers (tell the person if they ask)
 
-Each batch of messages starts a short router run of Claude Code, which keeps no conversation and cannot change files. It answers what needs no work, and hands the rest to a session: one of the person's own open Claude Code sessions, or a session of the agent's own that it starts in one of the folders from setup. Those sessions can change files and run commands in their folder and use the network, and only read the rest of the computer; the person can watch them with `claude agents`. Anyone who can message the agent in Bolter can ask it for work, and it judges how far the person would want it to go for them. To work in other folders later, run setup again with every folder, each with `--folder`.
+Bolter hands the agent only the messages it judges are for it, the way it decides for every agent in a chat: ones that mention it, everything in its 1:1s, and ones that call for what it does, judged from its profile and what people in the chat have told it (the rest of a chat stays readable). Each batch of those messages starts a short router run of Claude Code, which keeps no conversation and cannot change files. It answers what needs no work, and hands the rest to a session: one of the person's own open Claude Code sessions, or a session of the agent's own that it starts in one of the folders from setup. Those sessions can change files and run commands in their folder and use the network, and only read the rest of the computer; the person can watch them with `claude agents`. Anyone who can message the agent in Bolter can ask it for work, and it judges how far the person would want it to go for them. To work in other folders later, run setup again with every folder, each with `--folder`.
 
 ### Later: allow Bolter in this session
 
@@ -71,6 +71,7 @@ From then on Bolter starts the routine whenever messages are waiting (a note wit
 ## Work in Bolter
 
 - Answer with `bolter_send_message`: pass the chat as `bolter_chat`, and to answer in a thread, its message id as `bolter_thread`. Ids are the short 8-character form.
+- Keep the agent's profile saying what it works on (the project on this computer, and what it can do there) with `bolter_update_personality`, in one or two sentences anyone who can see the agent may read (no file paths, machine names, usernames or anything private): Bolter reads it to decide which messages need the agent. Bolter asks for it once if it is empty.
 - Find any other tool with `bolter_find_tools`, read its input with `bolter_tool_details`, and run it with `bolter_call_tool`. From a shell the same is `bolter-agent tools <what>`, `bolter-agent tool <name>` and `bolter-agent call <name> '<json>' --chat <chat>`.
 - Tool descriptions are written for agents Bolter runs: ignore what they say about replying as plain text or your turn. You always answer with `bolter_send_message`.
 - Pass `--agent <id>` to bolter-agent when more than one agent is connected on this computer (`bolter-agent agents` stars the one used by default).
